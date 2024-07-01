@@ -1,4 +1,5 @@
 from urllib.parse import urlparse, parse_qs
+import tldextract
 import argparse
 import sys
 import logging
@@ -6,7 +7,7 @@ import logging
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-unique_paths = set()
+unique_paths_subd = set()
 unique_params = set()
 
 
@@ -31,12 +32,17 @@ else:
 for url in urls:
     parsed_url = urlparse(url)
     
-    # Extract and store path components
+    # Extract and store path components, also subdomain names
     path_components = parsed_url.path.strip('/').split('/')
     for component in path_components:
         if component:
-            unique_paths.add(component)
+            unique_paths_subd.add(component)
     
+    extracted = tldextract.extract(parsed_url.subdomain)
+    subdomain_names = extracted.subdomain.split('.')
+    for subdomain_name in subdomain_names:
+        unique_paths_subd.add(subdomain_name)
+
     # Extract and store query parameters
     query_params = parse_qs(parsed_url.query)
     for param in query_params.keys():
@@ -47,7 +53,7 @@ if args.directory:
 else:
     dir_file = "directory-wordlist.txt"
 with open(dir_file, 'w') as dir_file:
-    for path in sorted(unique_paths):
+    for path in sorted(unique_paths_subd):
         dir_file.write(path + '\n')
 
 
